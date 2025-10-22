@@ -273,3 +273,27 @@ impl<'a> PatternIterator<'a> {
 pub fn find_matches(text: &str) -> Vec<&str> {
     PatternIterator::new(text).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+    use onig::Regex;
+
+    const GPT4_PATTERN: &str = r"'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+";
+
+    fn run_regex(text: &str) -> Vec<&str> {
+        let re = Regex::new(GPT4_PATTERN).unwrap();
+        re.find_iter(text).map(|(start, end)| &text[start..end]).collect()
+    }
+
+    proptest! {
+        #[test]
+        fn proptest_comparison(s in "\\PC*") {
+            let regex_result = run_regex(&s);
+            let library_result = find_matches(&s);
+
+            assert_eq!(regex_result, library_result, "Mismatch found for input: {:?}", s);
+        }
+    }
+}

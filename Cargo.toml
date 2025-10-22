@@ -9,3 +9,7 @@ keywords = ["tokenization", "bpe", "pattern-matching", "nlp"]
 categories = ["text-processing"]
 
 [dependencies]
+
+[dev-dependencies]
+proptest = "1.2.0"
+onig = "6.4.0"
