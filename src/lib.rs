@@ -1,12 +1,4 @@
-use lazy_static::lazy_static;
-use onig::Regex;
-
-lazy_static! {
-    // Regex to check if a character is a letter (matches \p{L})
-    static ref LETTER_RE: Regex = Regex::new(r"\A\p{L}\z").unwrap();
-    // Regex to check if a character is a number (matches \p{N})
-    static ref NUMBER_RE: Regex = Regex::new(r"\A\p{N}\z").unwrap();
-}
+use unicode_general_category::{get_general_category, GeneralCategory};
 
 pub struct PatternIterator<'a> {
     text: &'a str,
@@ -26,15 +18,27 @@ impl<'a> PatternIterator<'a> {
     }
 
     fn is_letter(c: char) -> bool {
-        let mut buf = [0u8; 4];
-        let s = c.encode_utf8(&mut buf);
-        LETTER_RE.is_match(s)
+        // Match Unicode general category Letter (L*)
+        // This includes: Lu, Ll, Lt, Lm, Lo
+        matches!(
+            get_general_category(c),
+            GeneralCategory::UppercaseLetter
+                | GeneralCategory::LowercaseLetter
+                | GeneralCategory::TitlecaseLetter
+                | GeneralCategory::ModifierLetter
+                | GeneralCategory::OtherLetter
+        )
     }
 
     fn is_number(c: char) -> bool {
-        let mut buf = [0u8; 4];
-        let s = c.encode_utf8(&mut buf);
-        NUMBER_RE.is_match(s)
+        // Match Unicode general category Number (N*)
+        // This includes: Nd, Nl, No
+        matches!(
+            get_general_category(c),
+            GeneralCategory::DecimalNumber
+                | GeneralCategory::LetterNumber
+                | GeneralCategory::OtherNumber
+        )
     }
 
     fn peek_char_at(&self, pos: usize) -> Option<char> {
@@ -361,6 +365,12 @@ mod tests {
         fn proptest_comparison(s in "\\PC*") {
             let regex_result = run_regex(&s);
             let library_result = find_matches(&s);
+
+            if regex_result != library_result {
+                eprintln!("Mismatch for input: {:?}", s);
+                eprintln!("Regex result: {:?}", regex_result);
+                eprintln!("Library result: {:?}", library_result);
+            }
 
             assert_eq!(regex_result, library_result, "Mismatch found for input: {:?}", s);
         }
