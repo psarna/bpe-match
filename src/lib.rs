@@ -1,3 +1,13 @@
+use lazy_static::lazy_static;
+use onig::Regex;
+
+lazy_static! {
+    // Regex to check if a character is a letter (matches \p{L})
+    static ref LETTER_RE: Regex = Regex::new(r"\A\p{L}\z").unwrap();
+    // Regex to check if a character is a number (matches \p{N})
+    static ref NUMBER_RE: Regex = Regex::new(r"\A\p{N}\z").unwrap();
+}
+
 pub struct PatternIterator<'a> {
     text: &'a str,
     current_pos: usize,
@@ -13,6 +23,18 @@ impl<'a> PatternIterator<'a> {
 
     fn is_newline(c: char) -> bool {
         c == '\r' || c == '\n'
+    }
+
+    fn is_letter(c: char) -> bool {
+        let mut buf = [0u8; 4];
+        let s = c.encode_utf8(&mut buf);
+        LETTER_RE.is_match(s)
+    }
+
+    fn is_number(c: char) -> bool {
+        let mut buf = [0u8; 4];
+        let s = c.encode_utf8(&mut buf);
+        NUMBER_RE.is_match(s)
     }
 
     fn peek_char_at(&self, pos: usize) -> Option<char> {
@@ -106,22 +128,25 @@ impl<'a> PatternIterator<'a> {
 
     fn try_match_optional_nonalpha_plus_letters(&self, start_pos: usize) -> Option<usize> {
         let mut pos = start_pos;
-        
+
+        // Optional non-alphabetic, non-numeric, non-newline character
         if let Some(c) = self.peek_char_at(pos) {
-            if !c.is_alphabetic() && !c.is_numeric() && !Self::is_newline(c) {
+            if !Self::is_letter(c) && !Self::is_number(c) && !Self::is_newline(c) {
                 pos += c.len_utf8();
             }
         }
-        
+
+        // Must be followed by one or more alphabetic characters
         let letter_start = pos;
         while let Some(c) = self.peek_char_at(pos) {
-            if c.is_alphabetic() {
+            if Self::is_letter(c) {
                 pos += c.len_utf8();
             } else {
                 break;
             }
         }
-        
+
+        // We need at least one letter after the optional non-alpha character
         if pos > letter_start {
             Some(pos)
         } else {
@@ -135,7 +160,7 @@ impl<'a> PatternIterator<'a> {
         
         while count < 3 {
             if let Some(c) = self.peek_char_at(pos) {
-                if c.is_numeric() {
+                if Self::is_number(c) {
                     pos += c.len_utf8();
                     count += 1;
                 } else {
@@ -168,7 +193,7 @@ impl<'a> PatternIterator<'a> {
         
         let special_start = pos;
         while let Some(c) = self.peek_char_at(pos) {
-            if !c.is_whitespace() && !c.is_alphabetic() && !c.is_numeric() {
+            if !c.is_whitespace() && !Self::is_letter(c) && !Self::is_number(c) {
                 pos += c.len_utf8();
             } else {
                 break;
@@ -285,6 +310,50 @@ mod tests {
     fn run_regex(text: &str) -> Vec<&str> {
         let re = Regex::new(GPT4_PATTERN).unwrap();
         re.find_iter(text).map(|(start, end)| &text[start..end]).collect()
+    }
+
+    #[test]
+    fn test_simple_case() {
+        let input = "¥hello";
+        let regex_result = run_regex(input);
+        let library_result = find_matches(input);
+
+        println!("Input: {:?}", input);
+        println!("Regex result: {:?}", regex_result);
+        println!("Library result: {:?}", library_result);
+
+        assert_eq!(regex_result, library_result);
+    }
+
+    #[test]
+    fn test_unicode_case() {
+        let input = "\u{115dc}¥";
+        let regex_result = run_regex(input);
+        let library_result = find_matches(input);
+
+        println!("Input: {:?}", input);
+        println!("Input chars:");
+        for (i, c) in input.chars().enumerate() {
+            println!("  [{}] '{}' - is_alphabetic: {}, is_numeric: {}, is_whitespace: {}",
+                     i, c, c.is_alphabetic(), c.is_numeric(), c.is_whitespace());
+        }
+        println!("Regex result: {:?}", regex_result);
+        println!("Library result: {:?}", library_result);
+
+        assert_eq!(regex_result, library_result);
+    }
+
+    #[test]
+    fn test_simple_letter() {
+        let input = "hello";
+        let regex_result = run_regex(input);
+        let library_result = find_matches(input);
+
+        println!("Input: {:?}", input);
+        println!("Regex result: {:?}", regex_result);
+        println!("Library result: {:?}", library_result);
+
+        assert_eq!(regex_result, library_result);
     }
 
     proptest! {
