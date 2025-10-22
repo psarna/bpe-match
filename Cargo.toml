@@ -1,0 +1,11 @@
+[package]
+name = "bpe-match"
+version = "0.1.1"
+edition = "2021"
+description = "A pattern matching library for BPE tokenization, intended to replace regex-based approaches."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/psarna/bpe-match"
+keywords = ["tokenization", "bpe", "pattern-matching", "nlp"]
+categories = ["text-processing"]
+
+[dependencies]
