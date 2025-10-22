@@ -9,9 +9,9 @@ When [karpathy/nanochat](https://github.com/karpathy/nanochat) uses it instead o
 Old:
 ```
 📊 Performance comparison:
-   RustBPE: 0.5127s
-   HuggingFace: 2.2548s
-   Speedup: 4.40x
+   RustBPE: 5.6556s
+   HuggingFace: 22.8079s
+   Speedup: 4.03x
 ```
 
 New and fancy:
