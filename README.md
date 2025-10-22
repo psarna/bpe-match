@@ -2,6 +2,8 @@
 
 Replacement for the notorious `const GPT4_PATTERN: &str = r"'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+";`
 
+Disclaimer: I only checked with a few relatively small inputs if it is in fact 1:1 with this abomination of a regex above. Definitely close enough for pretokenization purposes though `¯\_(ツ)_/¯`
+
 When [karpathy/nanochat](https://github.com/karpathy/nanochat) uses it instead of regex, I get the following improvement:
 
 Old:
