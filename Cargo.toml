@@ -9,6 +9,7 @@ keywords = ["tokenization", "bpe", "pattern-matching", "nlp"]
 categories = ["text-processing"]
 
 [dependencies]
+unicode-general-category = "1.1"
 
 [dev-dependencies]
 proptest = "1.2.0"
